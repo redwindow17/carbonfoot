@@ -4,6 +4,8 @@
 
 **Challenge vertical:** *Challenge 3 — Carbon Footprint Awareness Platform.*
 
+**🔗 Live demo:** https://carbonfoot-coral.vercel.app
+
 EcoTrack turns a handful of everyday questions (how you travel, heat your home, eat, and shop) into an estimated yearly footprint, then acts like a personal advisor: it works out **where your emissions actually come from** and recommends the **highest‑impact actions for you specifically**, with the savings calculated from your own numbers. Set a goal, commit to actions, and track your progress over time — all in the browser, with your data never leaving your device.
 
 ---
