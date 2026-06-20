@@ -52,9 +52,9 @@ export function ComparisonCard({ totalKgPerYear }: { totalKgPerYear: number }) {
 
   return (
     <section className="card comparison" aria-labelledby="comparison-heading">
-      <h3 className="card__title" id="comparison-heading">
+      <h2 className="card__title" id="comparison-heading">
         How you compare
-      </h3>
+      </h2>
 
       <div className="field comparison__picker">
         <label className="field__label" htmlFor={selectId}>

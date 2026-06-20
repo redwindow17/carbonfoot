@@ -18,9 +18,9 @@ export function BreakdownChart({ result }: { result: FootprintResult }) {
 
   return (
     <section className="card breakdown" aria-labelledby="breakdown-heading">
-      <h3 className="card__title" id="breakdown-heading">
+      <h2 className="card__title" id="breakdown-heading">
         Where it comes from
-      </h3>
+      </h2>
       <ul className="breakdown__list">
         {rows.map((category) => {
           const kg = result.byCategory[category];

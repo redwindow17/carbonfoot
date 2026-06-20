@@ -21,9 +21,9 @@ export function Recommendations() {
   if (recommendations.length === 0) {
     return (
       <section className="card recommendations" aria-labelledby="recs-heading">
-        <h3 className="card__title" id="recs-heading">
+        <h2 className="card__title" id="recs-heading">
           Your action plan
-        </h3>
+        </h2>
         <p className="recommendations__empty">
           🎉 Your footprint is already low across the board — there are no high-impact actions to
           suggest right now. Keep it up!
@@ -56,9 +56,9 @@ export function Recommendations() {
               className={`recommendation${committed ? ' recommendation--committed' : ''}`}
             >
               <div className="recommendation__body">
-                <h4 className="recommendation__title" id={titleId}>
+                <h3 className="recommendation__title" id={titleId}>
                   {rec.title}
-                </h4>
+                </h3>
                 <p className="recommendation__rationale">{rec.rationale}</p>
                 <div className="recommendation__meta">
                   <span className={`badge ${effort.className}`}>{effort.label}</span>
