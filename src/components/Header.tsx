@@ -19,7 +19,7 @@ export function Header() {
           🌱
         </span>
         <div>
-          <p className="header__title">EcoTrack</p>
+          <h1 className="header__title">EcoTrack</h1>
           <p className="header__tagline">Understand, track and shrink your carbon footprint.</p>
         </div>
       </div>

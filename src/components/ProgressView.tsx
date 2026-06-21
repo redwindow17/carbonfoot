@@ -41,9 +41,9 @@ export function ProgressView() {
     <div className="progress">
       {/* Goal setting */}
       <section className="card" aria-labelledby="goal-heading">
-        <h3 className="card__title" id="goal-heading">
+        <h2 className="card__title" id="goal-heading">
           Set a reduction goal
-        </h3>
+        </h2>
         <div className="goal__control">
           <label className="field__label" htmlFor="goal-slider">
             Cut my footprint by{' '}
@@ -88,9 +88,9 @@ export function ProgressView() {
 
       {/* Projection */}
       <section className="card" aria-labelledby="projection-heading">
-        <h3 className="card__title" id="projection-heading">
+        <h2 className="card__title" id="projection-heading">
           Your projection
-        </h3>
+        </h2>
         <dl className="projection__stats">
           <div className="projection__stat">
             <dt>Now</dt>
@@ -150,9 +150,9 @@ export function ProgressView() {
 
       {/* History */}
       <section className="card" aria-labelledby="history-heading">
-        <h3 className="card__title" id="history-heading">
+        <h2 className="card__title" id="history-heading">
           Track your history
-        </h3>
+        </h2>
         <p className="history__intro">
           Save a snapshot whenever you update your profile to watch your footprint change over time.
         </p>
