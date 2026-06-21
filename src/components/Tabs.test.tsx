@@ -38,5 +38,23 @@ describe('Tabs (accessibility)', () => {
 
     await user.keyboard('{End}');
     expect(screen.getByRole('tab', { name: 'Gamma' })).toHaveAttribute('aria-selected', 'true');
+
+    // Wrap forward from the last tab back round to the first.
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('ignores unrelated keys without changing the active tab', async () => {
+    const user = userEvent.setup();
+    render(<Tabs tabs={tabs} ariaLabel="Demo" />);
+
+    screen.getByRole('tab', { name: 'Alpha' }).focus();
+    await user.keyboard('{Enter}'); // not a navigation key — handled by default click only
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('renders nothing when given no tabs', () => {
+    const { container } = render(<Tabs tabs={[]} ariaLabel="Empty" />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

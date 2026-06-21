@@ -15,6 +15,7 @@ import {
   CONSUMPTION_KG_PER_YEAR,
   DIET_KG_PER_YEAR,
   ELECTRICITY_KG_PER_KWH,
+  FLIGHT_KG,
   HEAT_PUMP_COP,
 } from './emissionFactors';
 import { resolveHeatingFactor } from './calculator';
@@ -76,6 +77,35 @@ interface Rule {
 
 const fmt = (kg: number): string => Math.round(kg).toLocaleString('en-US');
 
+/**
+ * Saving from swapping a higher-carbon factor for a cleaner one, scaled by the
+ * line item's current emissions. Returns 0 for a non-positive current factor
+ * (nothing to improve on) so the division can never blow up. Shared by every
+ * "switch to a cleaner option" rule so they stay consistent.
+ */
+export function savingFromFactorSwap(
+  currentKg: number,
+  currentFactor: number,
+  improvedFactor: number,
+): number {
+  if (currentFactor <= 0) return 0;
+  return currentKg * (1 - improvedFactor / currentFactor);
+}
+
+/**
+ * Saving from moving one rung down an ordered ladder (diet, consumption): the
+ * gap between the current tier's emissions and the next, or 0 if already at the
+ * cleanest tier. Shared by the diet and goods "step down" rules.
+ */
+export function tierStepDownSaving<T extends string>(
+  current: T,
+  nextTier: Record<T, T | null>,
+  emissions: Record<T, number>,
+): number {
+  const next = nextTier[current];
+  return next ? emissions[current] - emissions[next] : 0;
+}
+
 const RULES: readonly Rule[] = [
   // --- Transport ------------------------------------------------------------
   {
@@ -97,10 +127,12 @@ const RULES: readonly Rule[] = [
     applies: (c) =>
       ['petrol', 'diesel', 'hybrid'].includes(c.profile.transport.carFuel) &&
       c.li('transport.car') > 200,
-    savingsKg: (c) => {
-      const current = CAR_KG_PER_KM[c.profile.transport.carFuel];
-      return current > 0 ? c.li('transport.car') * (1 - CAR_KG_PER_KM.electric / current) : 0;
-    },
+    savingsKg: (c) =>
+      savingFromFactorSwap(
+        c.li('transport.car'),
+        CAR_KG_PER_KM[c.profile.transport.carFuel],
+        CAR_KG_PER_KM.electric,
+      ),
     rationale: (c, s) =>
       `A ${CAR_FUEL_LABELS[c.profile.transport.carFuel].toLowerCase()} car emits roughly ` +
       `${fmt(c.li('transport.car'))} kg CO₂e a year for your mileage. On your current grid an EV would ` +
@@ -113,7 +145,8 @@ const RULES: readonly Rule[] = [
     title: () => 'Take the train instead of short-haul flights',
     applies: (c) => c.profile.transport.shortHaulFlightsPerYear >= 1,
     savingsKg: (c) =>
-      c.profile.transport.shortHaulFlightsPerYear * (500 - SHORT_HAUL_TRAIN_EQUIVALENT_KG),
+      c.profile.transport.shortHaulFlightsPerYear *
+      (FLIGHT_KG.shortHaul - SHORT_HAUL_TRAIN_EQUIVALENT_KG),
     rationale: (c, s) => {
       const n = Math.round(c.profile.transport.shortHaulFlightsPerYear);
       return (
@@ -128,10 +161,10 @@ const RULES: readonly Rule[] = [
     effort: 'committed',
     title: () => 'Take one fewer long-haul flight',
     applies: (c) => c.profile.transport.longHaulFlightsPerYear >= 1,
-    savingsKg: () => 2500,
+    savingsKg: () => FLIGHT_KG.longHaul,
     rationale: (_c, s) =>
-      `A single long-haul return flight adds roughly 2,500 kg CO₂e — more than the entire yearly ` +
-      `footprint of an average person in some countries. Skipping one saves about ${fmt(s)} kg.`,
+      `A single long-haul return flight adds roughly ${fmt(FLIGHT_KG.longHaul)} kg CO₂e — more than ` +
+      `the entire yearly footprint of an average person in some countries. Skipping one saves about ${fmt(s)} kg.`,
   },
   // --- Home energy ----------------------------------------------------------
   {
@@ -141,12 +174,12 @@ const RULES: readonly Rule[] = [
     title: () => 'Switch to a certified renewable electricity tariff',
     applies: (c) =>
       c.profile.home.electricitySource !== 'fullGreen' && c.li('home.electricity') > 100,
-    savingsKg: (c) => {
-      const current = ELECTRICITY_KG_PER_KWH[c.profile.home.electricitySource];
-      return current > 0
-        ? c.li('home.electricity') * (1 - ELECTRICITY_KG_PER_KWH.fullGreen / current)
-        : 0;
-    },
+    savingsKg: (c) =>
+      savingFromFactorSwap(
+        c.li('home.electricity'),
+        ELECTRICITY_KG_PER_KWH[c.profile.home.electricitySource],
+        ELECTRICITY_KG_PER_KWH.fullGreen,
+      ),
     rationale: (c, s) =>
       `Your share of home electricity is about ${fmt(c.li('home.electricity'))} kg CO₂e a year. ` +
       `Moving to a 100% renewable tariff is often the single biggest low-effort win — around ${fmt(s)} kg.`,
@@ -180,14 +213,12 @@ const RULES: readonly Rule[] = [
     title: () => 'Replace fossil heating with a heat pump',
     applies: (c) =>
       ['gas', 'oil'].includes(c.profile.home.heatingFuel) && c.li('home.heating') > 200,
-    savingsKg: (c) => {
-      const current = resolveHeatingFactor(
-        c.profile.home.heatingFuel,
-        c.profile.home.electricitySource,
-      );
-      const heatPump = ELECTRICITY_KG_PER_KWH[c.profile.home.electricitySource] / HEAT_PUMP_COP;
-      return current > 0 ? c.li('home.heating') * (1 - heatPump / current) : 0;
-    },
+    savingsKg: (c) =>
+      savingFromFactorSwap(
+        c.li('home.heating'),
+        resolveHeatingFactor(c.profile.home.heatingFuel, c.profile.home.electricitySource),
+        ELECTRICITY_KG_PER_KWH[c.profile.home.electricitySource] / HEAT_PUMP_COP,
+      ),
     rationale: (c, s) =>
       `Your ${HEATING_FUEL_LABELS[c.profile.home.heatingFuel].toLowerCase()} heating emits about ` +
       `${fmt(c.li('home.heating'))} kg CO₂e a year. A heat pump is far more efficient and would ` +
@@ -203,10 +234,7 @@ const RULES: readonly Rule[] = [
       return next === 'vegan' ? 'Try a fully plant-based diet' : 'Eat a little less meat';
     },
     applies: (c) => NEXT_DIET[c.profile.food.dietType] !== null,
-    savingsKg: (c) => {
-      const next = NEXT_DIET[c.profile.food.dietType];
-      return next ? DIET_KG_PER_YEAR[c.profile.food.dietType] - DIET_KG_PER_YEAR[next] : 0;
-    },
+    savingsKg: (c) => tierStepDownSaving(c.profile.food.dietType, NEXT_DIET, DIET_KG_PER_YEAR),
     rationale: (c, s) => {
       const next = NEXT_DIET[c.profile.food.dietType];
       const target = next ? DIET_LABELS[next] : '';
@@ -223,12 +251,12 @@ const RULES: readonly Rule[] = [
     effort: 'medium',
     title: () => 'Buy less, and choose second-hand or repairable',
     applies: (c) => NEXT_CONSUMPTION[c.profile.goods.consumptionLevel] !== null,
-    savingsKg: (c) => {
-      const next = NEXT_CONSUMPTION[c.profile.goods.consumptionLevel];
-      return next
-        ? CONSUMPTION_KG_PER_YEAR[c.profile.goods.consumptionLevel] - CONSUMPTION_KG_PER_YEAR[next]
-        : 0;
-    },
+    savingsKg: (c) =>
+      tierStepDownSaving(
+        c.profile.goods.consumptionLevel,
+        NEXT_CONSUMPTION,
+        CONSUMPTION_KG_PER_YEAR,
+      ),
     rationale: (c, s) =>
       `Your shopping and services footprint is about ${fmt(c.li('goods.consumption'))} kg CO₂e a year. ` +
       `Buying less and choosing used, durable or repairable goods could save around ${fmt(s)} kg.`,

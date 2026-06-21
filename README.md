@@ -104,7 +104,7 @@ Accessibility was a first‑class concern, not an afterthought:
 - **Live regions used sparingly** — the goal uses `role="progressbar"` with a descriptive `aria-valuetext`; saving a snapshot announces via a polite live region. The keystroke‑level total is *not* a live region (it would overwhelm screen‑reader users).
 - **Visible focus**, **dark‑mode** support (`prefers-color-scheme`), and **reduced‑motion** support (`prefers-reduced-motion`).
 
-The tab keyboard behaviour is covered by automated tests in [`Tabs.test.tsx`](src/components/Tabs.test.tsx).
+Beyond manual care, the **heading outline** and **WAI‑ARIA Tabs keyboard behaviour** are covered by automated tests, and every tab is asserted to have **zero violations against the WCAG 2.0/2.1 A & AA rule set** using `axe-core` ([`App.axe.test.tsx`](src/App.axe.test.tsx)).
 
 ---
 
@@ -120,10 +120,11 @@ The tab keyboard behaviour is covered by automated tests in [`Tabs.test.tsx`](sr
 
 ## 🧪 Testing
 
-**56 tests across 10 files**, with the safety‑critical domain logic at ≈ **100% coverage**.
+**122 tests across 21 files** at **100% statement / function / line coverage** (and 99.5% branches — the remainder being two provably‑unreachable defensive guards). Coverage thresholds are enforced in [`vite.config.ts`](vite.config.ts), so the bar can't silently regress.
 
-- **Domain unit tests** — exact‑value checks on the calculator, context gating and ordering of recommendations, benchmark verdicts, goal projection, and input/storage sanitisation (including tampered data).
-- **Component tests** — ARIA tab keyboard navigation, the calculator's live recalculation, recommendation commitment, and a full‑app navigation smoke test.
+- **Domain unit tests** — exact‑value checks on the calculator, context gating and ordering of recommendations (incl. the factor‑swap and tier‑step saving helpers and the effort tie‑break), benchmark verdicts, goal projection and trend, and input/storage sanitisation (including tampered and non‑object data).
+- **Component & store tests** — every view (calculator, dashboard, breakdown, comparison, recommendations, progress), the `useReducer` store and its persistence/rehydration, reset confirmation, accessible number/select fields, and full‑app navigation.
+- **Accessibility tests** — heading hierarchy and automated WCAG A/AA checks (`axe-core`) on each tab.
 
 ```bash
 npm test            # run all tests once

@@ -9,13 +9,14 @@
  */
 
 import { useState } from 'react';
-import { INPUT_LIMITS, trendPct } from '../domain';
+import { trendPct } from '../domain';
 import { useApp } from '../app/appContext';
 import { formatKg, formatPercent, formatSignedPercent } from '../utils/format';
 
 const GOAL_MIN = 5;
 const GOAL_MAX = 50;
 const GOAL_STEP = 5;
+const GOAL_DEFAULT = 20;
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -27,7 +28,7 @@ function formatDate(iso: string): string {
 export function ProgressView() {
   const { result, goal, setGoal, progress, committedRecommendations, history, saveSnapshot } =
     useApp();
-  const [draftPct, setDraftPct] = useState(goal?.targetReductionPct ?? 20);
+  const [draftPct, setDraftPct] = useState(goal?.targetReductionPct ?? GOAL_DEFAULT);
   const [status, setStatus] = useState('');
 
   const overallTrend = trendPct(history);
@@ -61,10 +62,8 @@ export function ProgressView() {
             value={draftPct}
             aria-valuetext={`${draftPct} percent reduction`}
             onChange={(event) => {
-              const pct = Math.min(
-                INPUT_LIMITS.targetReductionPct.max,
-                Number(event.target.value),
-              );
+              // The slider's min/max/step already constrain this to a valid range.
+              const pct = Number(event.target.value);
               setDraftPct(pct);
               if (goal) setGoal({ targetReductionPct: pct });
             }}

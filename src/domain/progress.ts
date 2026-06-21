@@ -96,6 +96,8 @@ export function trendPct(history: readonly FootprintSnapshot[]): number | null {
   if (history.length < 2) return null;
   const first = history[0];
   const last = history[history.length - 1];
-  if (!first || !last || first.totalKgPerYear <= 0) return null;
+  // The length check guarantees both endpoints exist; bail only if the baseline
+  // is non-positive (no sensible percentage to report).
+  if (first.totalKgPerYear <= 0) return null;
   return Math.round(((last.totalKgPerYear - first.totalKgPerYear) / first.totalKgPerYear) * 100);
 }

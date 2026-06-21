@@ -4,7 +4,7 @@
  */
 
 import { useApp } from '../app/appContext';
-import { formatKg, formatTonnes } from '../utils/format';
+import { formatKg, formatNumber, formatTonnes } from '../utils/format';
 import { BreakdownChart } from './BreakdownChart';
 import { ComparisonCard } from './ComparisonCard';
 
@@ -26,7 +26,7 @@ export function ResultsDashboard() {
         </p>
         <p className="dashboard__sub">
           ≈ {formatTonnes(result.totalKgPerYear)} — roughly the CO₂ that{' '}
-          {trees.toLocaleString('en-US')} trees absorb in a year.
+          {formatNumber(trees)} trees absorb in a year.
         </p>
       </section>
 

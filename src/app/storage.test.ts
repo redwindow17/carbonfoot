@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearPersistedState, loadPersistedState, savePersistedState } from './storage';
 import { DEFAULT_PROFILE } from '../domain';
 
@@ -101,5 +101,67 @@ describe('defensive reads', () => {
     expect(loaded?.history[0]?.id).toBe('good');
     // Missing category totals are backfilled with zeros, not left undefined.
     expect(loaded?.history[0]?.byCategory.transport).toBe(0);
+  });
+});
+
+describe('storage resilience', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  // jsdom proxies the localStorage instance, so spy on the prototype methods
+  // that window.localStorage actually resolves to.
+  it('returns null when reading throws (e.g. storage disabled)', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('storage access denied');
+    });
+    expect(loadPersistedState()).toBeNull();
+  });
+
+  it('silently ignores write failures (e.g. quota exceeded)', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota exceeded');
+    });
+    expect(() =>
+      savePersistedState({
+        profile: DEFAULT_PROFILE,
+        goal: null,
+        committedRecommendationIds: [],
+        history: [],
+      }),
+    ).not.toThrow();
+  });
+
+  it('silently ignores failures while clearing', () => {
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('cannot remove');
+    });
+    expect(() => clearPersistedState()).not.toThrow();
+  });
+
+  it('rejects a payload that is not an object', () => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(42));
+    expect(loadPersistedState()).toBeNull();
+  });
+
+  it('coerces non-array committed ids and non-object nested values', () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        schemaVersion: 1,
+        profile: DEFAULT_PROFILE,
+        goal: null,
+        committedRecommendationIds: 'not-an-array',
+        history: [
+          42, // a non-object entry is dropped entirely
+          { id: 'x', dateISO: '2026-01-01T00:00:00.000Z', totalKgPerYear: 10, byCategory: 'nope' },
+        ],
+      }),
+    );
+
+    const loaded = loadPersistedState();
+    expect(loaded?.committedRecommendationIds).toEqual([]);
+    expect(loaded?.history).toHaveLength(1);
+    expect(loaded?.history[0]?.byCategory.transport).toBe(0); // non-object byCategory → zeros
   });
 });

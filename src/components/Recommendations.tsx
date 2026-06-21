@@ -36,9 +36,9 @@ export function Recommendations() {
 
   return (
     <section className="card recommendations" aria-labelledby="recs-heading">
-      <h3 className="card__title" id="recs-heading">
+      <h2 className="card__title" id="recs-heading">
         Your action plan
-      </h3>
+      </h2>
       <p className="recommendations__intro">
         Personalised to your footprint and ordered by impact. Tick the actions you&apos;ll try —
         the <strong>Progress</strong> tab tracks them. Together these could save up to about{' '}

@@ -52,6 +52,16 @@ describe('calculateFootprint', () => {
     expect(solo.byCategory.home).toBe(2262); // full 1710 + 552, undivided
   });
 
+  it('treats a zero or invalid household size as a single occupant', () => {
+    const zero = calculateFootprint(
+      withProfile({ home: { ...DEFAULT_PROFILE.home, householdSize: 0 } }),
+    );
+    const solo = calculateFootprint(
+      withProfile({ home: { ...DEFAULT_PROFILE.home, householdSize: 1 } }),
+    );
+    expect(zero.byCategory.home).toBe(solo.byCategory.home);
+  });
+
   it('treats a missing car as zero transport from driving', () => {
     const result = calculateFootprint(
       withProfile({

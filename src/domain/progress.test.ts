@@ -40,6 +40,13 @@ describe('summarizeProgress', () => {
     const p = summarizeProgress(1000, [], { targetReductionPct: 0 });
     expect(p.targetKg).toBeNull();
   });
+
+  it('reports zero progress when the baseline is already zero', () => {
+    const p = summarizeProgress(0, [rec(100)], { targetReductionPct: 20 });
+    expect(p.targetKg).toBe(0);
+    expect(p.goalProgressPct).toBe(0);
+    expect(p.goalMet).toBe(true); // projected 0 already meets a 0 target
+  });
 });
 
 describe('createSnapshot', () => {
@@ -77,5 +84,13 @@ describe('trendPct', () => {
   it('returns null with fewer than two snapshots', () => {
     expect(trendPct([])).toBeNull();
     expect(trendPct([snap(1000, 'a')])).toBeNull();
+  });
+
+  it('returns null when the baseline snapshot is non-positive', () => {
+    expect(trendPct([snap(0, 'a'), snap(500, 'b')])).toBeNull();
+  });
+
+  it('reports an increase as a positive percentage', () => {
+    expect(trendPct([snap(1000, 'a'), snap(1200, 'b')])).toBe(20);
   });
 });

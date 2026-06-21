@@ -2,9 +2,14 @@
 
 const LOCALE = 'en-US';
 
+/** Whole number with thousands separators, e.g. 7219 → "7,219". */
+export function formatNumber(value: number): string {
+  return Math.round(value).toLocaleString(LOCALE);
+}
+
 /** e.g. 7219 → "7,219 kg". */
 export function formatKg(kg: number): string {
-  return `${Math.round(kg).toLocaleString(LOCALE)} kg`;
+  return `${formatNumber(kg)} kg`;
 }
 
 /** e.g. 7219 → "7.2 t" (one decimal). */
